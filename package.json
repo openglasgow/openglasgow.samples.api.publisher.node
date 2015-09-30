@@ -1,0 +1,35 @@
+{
+  "name": "openglasgow-samples-api-publisher-node",
+  "version": "1.0.0",
+  "description": "A node sample to publish data to the Glasgow Open Data Platform.",
+  "main": "index.js",
+  "preferGlobal": true,
+  "bin": {
+    "gcc-platform-demo-publish": "./bin/index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenGlasgow/openglasgow.samples.api.publisher.node.git"
+  },
+  "keywords": [
+    "open",
+    "data",
+    "node",
+    "javascript"
+  ],
+  "author": "Steven Livingstone-Perez <steven@livz.org> (http://livz.org)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/OpenGlasgow/openglasgow.samples.api.publisher.node/issues"
+  },
+  "homepage": "https://github.com/OpenGlasgow/openglasgow.samples.api.publisher.node#readme",
+  "dependencies": {
+    "adal-node": "^0.1.16",
+    "commander": "^2.8.1",
+    "lomath": "^0.2.2",
+    "request": "^2.60.0"
+  }
+}
