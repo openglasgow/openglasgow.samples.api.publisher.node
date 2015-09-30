@@ -33,4 +33,5 @@ bin/config.live.js
 #misc
 .idea
 .DS_Store
+config.js
 bin/config.js
