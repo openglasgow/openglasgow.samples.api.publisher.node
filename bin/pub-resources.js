@@ -132,12 +132,12 @@ function update() {
   if (program.json != null || program.xjson != null) {
     // get the json and continue
     if (program.json != null) {
-      completeUpdate(JSON.parse(program.json));
+      completeUpdate(JSON.parse(program.json), program.upload);
     }
     if (program.xjson != null) {
       fs.readFile(program.xjson, 'utf8', function (err, data) {
         if (err) throw err;
-        completeUpdate(JSON.parse(data));
+        completeUpdate(JSON.parse(data), program.upload);
       });
     }
   }
@@ -170,9 +170,13 @@ function completeCreate(json, file) {
   }
 }
 
-function completeUpdate(json) {
+function completeUpdate(json, file) {
 
-  publisher.updateResource(program.org, program.ds, program.res, json, renderTransaction);
+  if (file != null) {
+    publisher.updateResourceWithFile(program.org, program.ds, program.res, json, file, renderTransaction);
+  } else {
+    publisher.updateResource(program.org, program.ds, program.res, json, renderTransaction);
+  }
 }
 
 function render(err, results) {

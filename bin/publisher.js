@@ -119,6 +119,15 @@ module.exports = {
     this._doPostJson(uri, json, done);
 
   },
+  // Updates the specified resource with the json metadata and file
+  updateResourceWithFile: function(orgid, dsid, resid, json, file, done) {
+
+    console.log('Updating resource  with file in ' + resid);
+
+    var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_NEW_VERSION, orgid, dsid, resid);
+
+    this._doPostData(uri, json, file, done);
+  },
   // Creates the specified resource with the json metadata
   createResource: function(orgid, dsid, json, done) {
 
