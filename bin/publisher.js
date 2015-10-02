@@ -5,6 +5,7 @@ var OAuth = require('adal-node');
 var request = require('request');
 var util = require('util');
 var fs = require('fs');
+var path = require('path')
 var _ = require('lomath');
 
 var Organisation = require('./models/organisation.js');
@@ -128,6 +129,16 @@ module.exports = {
     this._doPostJson(uri, json, done);
 
   },
+  // Creates the specified resource with the json metadata and file
+  createResourceWithFile: function(orgid, dsid, json, file, done) {
+
+    console.log('Creating resource with file in ' + dsid);
+
+    var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_CREATE, orgid, dsid);
+
+    this._doPostData(uri, json, file, done);
+
+  },
   getToken: function(requestComplete) {
 
     // get an auth context for the specified tenant
@@ -178,8 +189,42 @@ module.exports = {
         qs: {
           'subscription-key': config.SubscriptionKey
         },
-        //json: true,
-        //body: JSON.parse(json)
+      }, function (err, res, body) {
+        if (res.statusCode != 200) {
+          err = res;
+        }
+
+        // get the json string into an object
+        callback(err, JSON.parse(body));
+      }
+    );
+  },
+  // Posts form data as part of the post
+  _doPostData: function(uri, json, file, callback) {
+
+    // a bug in form-data means it doesn't support nested json, so we need to flatten it
+    var f = _.flattenJSON(json);
+
+    // format for posting multi-part content
+    var data = {
+      body: JSON.stringify(f),
+      content: {
+        value: fs.createReadStream(file),
+        options: {
+          filename: path.basename(file)
+        }
+      }
+    };
+
+    // make the http request
+    request.post(uri, {
+        auth: {
+          bearer: this.accessToken
+        },
+        qs: {
+          'subscription-key': config.SubscriptionKey
+        },
+        formData: data
       }, function (err, res, body) {
         if (res.statusCode != 200) {
           err = res;

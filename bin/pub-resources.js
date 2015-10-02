@@ -14,6 +14,7 @@ program
   .option('-v, --val <string>', 'metadata value text')
   .option('-json, --json <string>', 'json string')
   .option('-xjson, --xjson <string>', 'path to json file')
+  .option('-up, --upload <string>', 'path to resource to upload')
   .parse(process.argv);
 
 if (!program.cmd) {
@@ -91,12 +92,12 @@ function create() {
 
   // create a fragment
   if (program.json != null) {
-    completeCreate(JSON.parse(program.json));
+    completeCreate(JSON.parse(program.json), program.upload);
   }
   if (program.xjson != null) {
     fs.readFile(program.xjson, 'utf8', function (err, data) {
       if (err) throw err;
-      completeCreate(JSON.parse(data));
+      completeCreate(JSON.parse(data), program.upload);
     });
   }
 }
@@ -160,9 +161,13 @@ function update() {
   }
 }
 
-function completeCreate(json) {
+function completeCreate(json, file) {
 
-  publisher.createResource(program.org, program.ds, json, renderTransaction);
+  if (file != null) {
+    publisher.createResourceWithFile(program.org, program.ds, json, file, renderTransaction);
+  } else {
+    publisher.createResource(program.org, program.ds, json, renderTransaction);
+  }
 }
 
 function completeUpdate(json) {
