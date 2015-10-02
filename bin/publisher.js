@@ -17,6 +17,9 @@ const API_WRITE_ENDPOINT = "https://api.open.glasgow.gov.uk/write/";
 const API_READ_ENDPOINT_LIST_ORGANISATIONS = "Organisations";
 const API_READ_ENDPOINT_LIST_ORGANISATION_DATASETS = API_READ_ENDPOINT_LIST_ORGANISATIONS + "/%s/Datasets";
 const API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES = API_READ_ENDPOINT_LIST_ORGANISATION_DATASETS + "/%s/Files";
+const API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCE = API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES + "/%s";
+
+const API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_CREATE = API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES;
 const API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_NEW_VERSION = API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES + "/%s";
 
 module.exports = {
@@ -84,12 +87,43 @@ module.exports = {
 
     });
   },
+  // Gets the metdata for a specified resource
+  getPublishedResource: function(orgid, dsid, resid, render, raw){
+    console.log('Getting resource metdata for ' + resid);
+
+    var uri = util.format(API_READ_ENDPOINT + API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCE, orgid, dsid, resid);
+
+    // make the get request
+    this._doGet(uri, function (err, json) {
+
+      // if raw is set then return the json directly
+      if (raw) {
+        render(err, json);
+      } else {
+
+        var result = new Resource(orgid, dsid, json.MetadataResultSet.FileMetadata.FileId, json.MetadataResultSet.FileMetadata.Title);
+
+        // now render it
+        render(err, result);
+      }
+    });
+  },
   // Updates the specified resource with the json metadata
   updateResource: function(orgid, dsid, resid, json, done) {
 
     console.log('Updating resource ' + resid);
 
     var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_NEW_VERSION, orgid, dsid, resid);
+
+    this._doPostJson(uri, json, done);
+
+  },
+  // Creates the specified resource with the json metadata
+  createResource: function(orgid, dsid, json, done) {
+
+    console.log('Creating resource in ' + dsid);
+
+    var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_CREATE, orgid, dsid);
 
     this._doPostJson(uri, json, done);
 
@@ -169,14 +203,15 @@ module.exports = {
           'subscription-key': config.SubscriptionKey
         },
         json: true,
-        body: JSON.parse(json)
+        body: json
       }, function (err, res, body) {
         if (res.statusCode != 200) {
           err = res;
         }
-        console.log(body);
+
+
         // get the json string into an object
-        //callback(err, JSON.parse(body));
+        callback(err, body);
       }
     );
   }
