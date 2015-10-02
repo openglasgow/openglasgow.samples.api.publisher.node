@@ -15,11 +15,14 @@ List all organisations for the logged on user.
 
 ### Datasets
 List all datasets associated with the specified organisation.
-- node pub.js datasets --cmd list --org 'de0f1bfc-ed16-429a-b03c-6a63a178efb1'
+- node pub.js datasets --cmd list --org '39086d5d-e92c-4e9f-92cb-a8b15c80dbd6'
 
 ### Resources
 List all files associated with the specified organisation and dataset.
-- node pub.js resources --cmd list --org 'de0f1bfc-ed16-429a-b03c-6a63a178efb1' --ds 'df590b18-c1f4-4d1f-ba0b-99266b91ea7c'
+- node pub.js resources --cmd list --org '39086d5d-e92c-4e9f-92cb-a8b15c80dbd6' --ds 'd8795050-bafb-40a0-8e8a-32e6ef860e27'
+
+Update a resource with new metadata.
+- node pub.js resources --cmd update --org '39086d5d-e92c-4e9f-92cb-a8b15c80dbd6' --ds 'd8795050-bafb-40a0-8e8a-32e6ef860e27' --res '923a4566-f58a-46c6-a752-510898baa392' --xjson '../test/testexternal.json'
 
 openglasgow.samples.api.publisher.node
 

@@ -42,7 +42,7 @@ function run(token){
 
 // List all datasets from a specified organisation
 function list() {
-  var ds = publisher.getPublishedDatasets(program.org, render);
+  publisher.getPublishedDatasets(program.org, render);
 }
 
 function render(err, results) {

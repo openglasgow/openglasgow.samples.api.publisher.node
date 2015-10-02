@@ -41,7 +41,7 @@ function run(token){
 
 // List all organisations this user manages
 function list() {
-  var ds = publisher.getOrganisations(render);
+  publisher.getOrganisations(render);
 }
 
 function render(err, results) {

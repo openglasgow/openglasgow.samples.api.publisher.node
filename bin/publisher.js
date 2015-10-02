@@ -12,17 +12,19 @@ var Dataset = require('./models/dataset.js');
 var Resource = require('./models/resource.js');
 
 // define the api endpoints
-const API_ENDPOINT = "https://api.open.glasgow.gov.uk/full/";
-const API_ENDPOINT_LIST_ORGANISATIONS = API_ENDPOINT + "Organisations";
-const API_ENDPOINT_LIST_ORGANISATION_DATASETS = API_ENDPOINT + "Organisations/%s/Datasets";
-const API_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES = API_ENDPOINT + "Organisations/%s/Datasets/%s/Files";
+const API_READ_ENDPOINT = "https://api.open.glasgow.gov.uk/read/";
+const API_WRITE_ENDPOINT = "https://api.open.glasgow.gov.uk/write/";
+const API_READ_ENDPOINT_LIST_ORGANISATIONS = "Organisations";
+const API_READ_ENDPOINT_LIST_ORGANISATION_DATASETS = API_READ_ENDPOINT_LIST_ORGANISATIONS + "/%s/Datasets";
+const API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES = API_READ_ENDPOINT_LIST_ORGANISATION_DATASETS + "/%s/Files";
+const API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_NEW_VERSION = API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES + "/%s";
 
 module.exports = {
   accessToken:null,
   // Gets the organisations this user is responsible for
   getOrganisations: function(render){
 
-    var uri = API_ENDPOINT_LIST_ORGANISATIONS;
+    var uri = API_READ_ENDPOINT + API_READ_ENDPOINT_LIST_ORGANISATIONS;
 
     // make the get request
     this._doGet(uri, function (err, json) {
@@ -44,7 +46,7 @@ module.exports = {
   getPublishedDatasets: function(orgid, render){
     console.log('Getting all datasets for ' + orgid);
 
-    var uri = util.format(API_ENDPOINT_LIST_ORGANISATION_DATASETS, orgid);
+    var uri = util.format(API_READ_ENDPOINT + API_READ_ENDPOINT_LIST_ORGANISATION_DATASETS, orgid);
 
     // make the get request
     this._doGet(uri, function (err, json) {
@@ -65,7 +67,7 @@ module.exports = {
   getPublishedResources: function(orgid, dsid, render){
     console.log('Getting all resources for ' + dsid);
 
-    var uri = util.format(API_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES, orgid, dsid);
+    var uri = util.format(API_READ_ENDPOINT + API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES, orgid, dsid);
 
     // make the get request
     this._doGet(uri, function (err, json) {
@@ -81,6 +83,16 @@ module.exports = {
       render(err, result);
 
     });
+  },
+  // Updates the specified resource with the json metadata
+  updateResource: function(orgid, dsid, resid, json, done) {
+
+    console.log('Updating resource ' + resid);
+
+    var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_NEW_VERSION, orgid, dsid, resid);
+
+    this._doPostJson(uri, json, done);
+
   },
   getToken: function(requestComplete) {
 
@@ -144,7 +156,9 @@ module.exports = {
       }
     );
   },
-  _doPostJson: function(uri, callback) {
+  _doPostJson: function(uri, json, callback) {
+
+    console.log('Making call to ' + uri);
 
     // make the http request
     request.post(uri, {
@@ -160,9 +174,9 @@ module.exports = {
         if (res.statusCode != 200) {
           err = res;
         }
-
+        console.log(body);
         // get the json string into an object
-        callback(err, JSON.parse(body));
+        //callback(err, JSON.parse(body));
       }
     );
   }
