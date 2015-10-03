@@ -17,11 +17,14 @@ const API_READ_ENDPOINT = "https://api.open.glasgow.gov.uk/read/";
 const API_WRITE_ENDPOINT = "https://api.open.glasgow.gov.uk/write/";
 const API_READ_ENDPOINT_LIST_ORGANISATIONS = "Organisations";
 const API_READ_ENDPOINT_LIST_ORGANISATION_DATASETS = API_READ_ENDPOINT_LIST_ORGANISATIONS + "/%s/Datasets";
+const API_READ_ENDPOINT_LIST_ORGANISATION_DATASET = API_READ_ENDPOINT_LIST_ORGANISATION_DATASETS + "/%s";
 const API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES = API_READ_ENDPOINT_LIST_ORGANISATION_DATASETS + "/%s/Files";
 const API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCE = API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES + "/%s";
 
+const API_WRITE_ENDPOINT_ORGANISATION_DATASET_CHANGE = API_READ_ENDPOINT_LIST_ORGANISATION_DATASET;
 const API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_CREATE = API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES;
 const API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_NEW_VERSION = API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES + "/%s";
+const API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_CHANGE_VERSION = API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_NEW_VERSION + '/Version/%s';
 
 module.exports = {
   accessToken:null,
@@ -67,6 +70,43 @@ module.exports = {
 
     });
   },
+  // Gets the specified dataset
+  getPublishedDataset: function(orgid, dsid, render, raw){
+    console.log('Getting dataset ' + dsid);
+
+    var uri = util.format(API_READ_ENDPOINT + API_READ_ENDPOINT_LIST_ORGANISATION_DATASET, orgid, dsid);
+
+    // make the get request
+    this._doGet(uri, function (err, json) {
+
+        // if raw is set then return the json directly
+        if (raw) {
+          render(err, json);
+        } else {
+
+          var result = new Dataset(orgid, json.MetadataResultSet.Id, json.MetadataResultSet.Title);
+
+          // now render it
+          render(err, result);
+        }
+
+    });
+  },
+  // Updates the specified dataset with the json metadata
+  changeDataset: function(orgid, dsid, json, done) {
+
+    console.log('Updating dataset ' + dsid);
+
+    if (config.AccessToken == null || config.AccessToken == '') {
+      console.log('A valid Authorisation Token is required to make this call. Set this in the config.js');
+      return;
+    }
+
+    var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_CHANGE, orgid, dsid);
+
+    this._doPutJson(uri, json, done, config.AccessToken);
+
+  },
   // Gets the files for a given dataset
   getPublishedResources: function(orgid, dsid, render){
     console.log('Getting all resources for ' + dsid);
@@ -109,25 +149,6 @@ module.exports = {
       }
     });
   },
-  // Updates the specified resource with the json metadata
-  updateResource: function(orgid, dsid, resid, json, done) {
-
-    console.log('Updating resource ' + resid);
-
-    var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_NEW_VERSION, orgid, dsid, resid);
-
-    this._doPostJson(uri, json, done);
-
-  },
-  // Updates the specified resource with the json metadata and file
-  updateResourceWithFile: function(orgid, dsid, resid, json, file, done) {
-
-    console.log('Updating resource  with file in ' + resid);
-
-    var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_NEW_VERSION, orgid, dsid, resid);
-
-    this._doPostData(uri, json, file, done);
-  },
   // Creates the specified resource with the json metadata
   createResource: function(orgid, dsid, json, done) {
 
@@ -147,6 +168,49 @@ module.exports = {
 
     this._doPostData(uri, json, file, done);
 
+  },
+  // Updates the specified resource with the json metadata
+  updateResource: function(orgid, dsid, resid, json, done) {
+
+    console.log('Updating resource ' + resid);
+
+    var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_NEW_VERSION, orgid, dsid, resid);
+
+    this._doPostJson(uri, json, done);
+
+  },
+  // Updates the specified resource with the json metadata and file
+  updateResourceWithFile: function(orgid, dsid, resid, json, file, done) {
+
+    console.log('Updating resource  with file in ' + resid);
+
+    var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_NEW_VERSION, orgid, dsid, resid);
+
+    this._doPostData(uri, json, file, done);
+  },
+  // Changes the specified resource with the json metadata
+  changeResource: function(orgid, dsid, resid, verid, json, done) {
+
+    console.log('Updating resource ' + resid);
+
+    if (config.AccessToken == null || config.AccessToken == '') {
+      console.log('A valid Authorisation Token is required to make this call. Set this in the config.js');
+      return;
+    }
+
+    var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_CHANGE_VERSION, orgid, dsid, resid, verid);
+
+    this._doPutJson(uri, json, done, config.AccessToken);
+
+  },
+  // Changes the specified resource with the json metadata and file
+  changeResourceWithFile: function(orgid, dsid, resid, verid, json, file, done) {
+
+    console.log('Updating resource  with file in ' + resid);
+
+    var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_CHANGE_VERSION, orgid, dsid, resid, verid);
+
+    this._doPutData(uri, json, file, done, config.AccessToken);
   },
   getToken: function(requestComplete) {
 
@@ -244,6 +308,48 @@ module.exports = {
       }
     );
   },
+  _doPutData: function(uri, json, file, callback, token) {
+
+    console.log('Making call to ' + uri);
+
+    // we can override passing a token in - needed for some calls that use an authorisation token
+    var t = this.accessToken;
+    if (token != null) t = token;
+
+
+    // a bug in form-data means it doesn't support nested json, so we need to flatten it
+    var f = _.flattenJSON(json);
+
+    // format for posting multi-part content
+    var data = {
+      body: JSON.stringify(f),
+      content: {
+        value: fs.createReadStream(file),
+        options: {
+          filename: path.basename(file)
+        }
+      }
+    };
+
+    // make the http request
+    request.put(uri, {
+        auth: {
+          bearer: t
+        },
+        qs: {
+          'subscription-key': config.SubscriptionKey
+        },
+        formData: data
+      }, function (err, res, body) {
+        if (res.statusCode != 200) {
+          err = res;
+        }
+
+        // get the json string into an object
+        callback(err, JSON.parse(body));
+      }
+    );
+  },
   _doPostJson: function(uri, json, callback) {
 
     console.log('Making call to ' + uri);
@@ -252,6 +358,35 @@ module.exports = {
     request.post(uri, {
         auth: {
           bearer: this.accessToken
+        },
+        qs: {
+          'subscription-key': config.SubscriptionKey
+        },
+        json: true,
+        body: json
+      }, function (err, res, body) {
+        if (res.statusCode != 200) {
+          err = res;
+        }
+
+
+        // get the json string into an object
+        callback(err, body);
+      }
+    );
+  },
+  _doPutJson: function(uri, json, callback, token) {
+
+    console.log('Making call to ' + uri);
+
+    // we can override passing a token in - needed for some calls that use an authorisation token
+    var t = this.accessToken;
+    if (token != null) t = token;
+
+    // make the http request
+    request.put(uri, {
+        auth: {
+          bearer: t
         },
         qs: {
           'subscription-key': config.SubscriptionKey

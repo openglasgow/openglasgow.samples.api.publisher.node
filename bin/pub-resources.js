@@ -10,6 +10,7 @@ program
   .option('-o, --org <guid>', 'organisation guid')
   .option('-ds, --ds <guid>', 'dataset guid')
   .option('-r, --res <guid>', 'resource guid')
+  .option('-ver, --ver <guid>', 'resource version guid')
   .option('-k, --key <string>', 'metadata key name')
   .option('-v, --val <string>', 'metadata value text')
   .option('-json, --json <string>', 'json string')
@@ -155,7 +156,8 @@ function update() {
       myutil.setValues(metadata, program.key, program.val);
 
       // send back to the server
-      publisher.updateResource(program.org, program.ds, program.res, metadata, renderTransaction);
+      completeUpdate(metadata, null);
+      //publisher.updateResource(program.org, program.ds, program.res, metadata, renderTransaction);
 
     }, true);
   }
@@ -172,10 +174,19 @@ function completeCreate(json, file) {
 
 function completeUpdate(json, file) {
 
-  if (file != null) {
-    publisher.updateResourceWithFile(program.org, program.ds, program.res, json, file, renderTransaction);
+  // do we have a specific version to change
+  if (program.ver != null) {
+    if (file != null) {
+      publisher.changeResourceWithFile(program.org, program.ds, program.res, program.ver, json, file, renderTransaction);
+    } else {
+      publisher.changeResource(program.org, program.ds, program.res, program.ver, json, renderTransaction);
+    }
   } else {
-    publisher.updateResource(program.org, program.ds, program.res, json, renderTransaction);
+    if (file != null) {
+      publisher.updateResourceWithFile(program.org, program.ds, program.res, json, file, renderTransaction);
+    } else {
+      publisher.updateResource(program.org, program.ds, program.res, json, renderTransaction);
+    }
   }
 }
 
