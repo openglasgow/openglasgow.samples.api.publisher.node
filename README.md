@@ -19,10 +19,14 @@ The best place to get this token for the moment is via the [API management porta
 #### Update all datasets on the platform matching the input key/value pair with a new specified value
     node pub.js bulk --cmd changeDatasetsKeyValue --key 'License' --val 'cc-by' --newval 'apache' --commit true
     
-**Note that in the command above, if you do not specify the --commit true flag your changes will not be saved - useful for seeing what will be changed.**
+*Note that in the command above, if you do not specify the --commit true flag your changes will not be saved - useful for seeing what will be changed.*
     
-#### Update all resources in the specified dataset matching the input key/value pair with a new specified value
-    node pub.js bulk --cmd changeDatasetResourcesKeyValue --ds 'd8795050-bafb-40a0-8e8a-32e6ef860e27' --key 'License' --val 'cc-by' --newval 'apache'
+#### Update all resources matching the key/value pair with a new specified value in the specified datasets matching the input key/value pair
+    node pub.js bulk --cmd changeDatasetResourcesKeyValue --key 'License' --val 'cc-by' --rkey 'License' --rval 'cc-by' --newval 'apache' --commit true
+    
+The --key and --val flags will match the initial candidate datasets and the --rkey and --rval will match the resources withing those datasets.
+
+*Note that in the command above, if you do not specify the --commit true flag your changes will not be saved - useful for seeing what will be changed.*  
     
 #### Update all resources on the platform matching the input key/value pair with a new specified value
     node pub.js bulk --cmd changeResourcesKeyValue --key 'License' --val 'cc-by' --newval 'apache'    
@@ -41,6 +45,8 @@ An organisation contains datasets, which contains resources (files).
 
 #### List all datasets with the specified key/value pair:
     node pub.js datasets --cmd query --key 'License' --val 'cc-by'
+    
+*Note that this will only return the top 100 matching datasets for now - paging to be added.*
 
 #### Get the metadata of a dataset:
     node pub.js datasets --cmd read --org '39086d5d-e92c-4e9f-92cb-a8b15c80dbd6' --ds 'd8795050-bafb-40a0-8e8a-32e6ef860e27'

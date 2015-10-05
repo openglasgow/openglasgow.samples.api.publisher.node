@@ -143,7 +143,7 @@ module.exports = {
 
   },
   // Gets the files for a given dataset
-  getPublishedResources: function(orgid, dsid, render){
+  getPublishedResources: function(orgid, dsid, render, raw){
     console.log('Getting all resources for ' + dsid);
 
     var uri = util.format(API_READ_ENDPOINT + API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES, orgid, dsid);
@@ -151,15 +151,21 @@ module.exports = {
     // make the get request
     this._doGet(uri, function (err, json) {
 
-      var result = [];
+        // if raw is set then return the json directly
+        if (raw) {
+          render(err, json);
+        } else {
 
-      // create entities from the json returned
-      for (var k in json.MetadataResultSet) {
-        result.push(new Resource(orgid, dsid, json.MetadataResultSet[k].FileId, json.MetadataResultSet[k].Title));
-      }
+          var result = [];
 
-      // now render it
-      render(err, result);
+          // create entities from the json returned
+          for (var k in json.MetadataResultSet) {
+            result.push(new Resource(orgid, dsid, json.MetadataResultSet[k].FileId, json.MetadataResultSet[k].Title));
+          }
+
+          // now render it
+          render(err, result);
+        }
 
     });
   },
@@ -261,6 +267,42 @@ module.exports = {
         render(err, json);
       } else {
 
+        console.log('Found ' + json.TotalCount)
+        //console.log(JSON.stringify(json))
+        var results = [];
+
+        // create entities from the json returned
+        for (var k in json.Results) {
+          results.push(new Dataset(json.Results[k].Data.OrganisationId, json.Results[k].Key, json.Results[k].Data.Title));
+        }
+
+        // now render it
+        render(err, results);
+
+      }
+
+    });
+
+  },
+  // Looks through the resources in a dataset for matching key and value
+  searchResourcesByKeyAndValue: function(ds, key, value, render, raw){
+
+    console.log('Searching resources in ' + ds + ' with ' + key + ' - ' + value);
+
+
+
+    var uri = util.format(API_READ_ENDPOINT + API_READ_ENDPOINT_SEARCH_KEYVALUE, key, value);
+
+    // make the get request
+    this._doGet(uri, function (err, json) {
+
+      // if raw is set then return the json directly
+      if (raw) {
+        render(err, json);
+      } else {
+
+        console.log('Found ' + json.TotalCount)
+        console.log(JSON.stringify(json))
         var result = [];
 
         // create entities from the json returned
@@ -298,23 +340,28 @@ module.exports = {
   // Private Functions
   _doGet: function(uri, callback) {
 
-    // make the http request
-    request.get(uri, {
-        auth: {
-          bearer: this.accessToken
-        },
-        qs: {
-          'subscription-key': config.SubscriptionKey
-        },
-      }, function (err, res, body) {
-        if (res.statusCode != 200) {
-          err = res;
-        }
+    try {
+      // make the http request
+      request.get(uri, {
+          auth: {
+            bearer: this.accessToken
+          },
+          qs: {
+            'subscription-key': config.SubscriptionKey
+          },
+        }, function (err, res, body) {
+          if (res.statusCode != 200) {
+            err = res;
+          }
 
-        // get the json string into an object
-        callback(err, JSON.parse(body));
-      }
-    );
+          // get the json string into an object
+          callback(err, JSON.parse(body));
+        }
+      );
+    } catch (e){
+      console.log(e);
+      throw e;
+    }
   },
   _doPost: function(uri, callback) {
 
