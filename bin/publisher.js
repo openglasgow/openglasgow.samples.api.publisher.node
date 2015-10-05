@@ -4,6 +4,7 @@ var config = require('./config');
 var OAuth = require('adal-node');
 var request = require('request');
 var util = require('util');
+var myutil = require('./util.js');
 var fs = require('fs');
 var path = require('path')
 var _ = require('lomath');
@@ -20,6 +21,7 @@ const API_READ_ENDPOINT_LIST_ORGANISATION_DATASETS = API_READ_ENDPOINT_LIST_ORGA
 const API_READ_ENDPOINT_LIST_ORGANISATION_DATASET = API_READ_ENDPOINT_LIST_ORGANISATION_DATASETS + "/%s";
 const API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES = API_READ_ENDPOINT_LIST_ORGANISATION_DATASETS + "/%s/Files";
 const API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCE = API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES + "/%s";
+const API_READ_ENDPOINT_SEARCH_KEYVALUE = "Datasets?key=%s&value=%s";
 
 const API_WRITE_ENDPOINT_ORGANISATION_DATASET_CHANGE = API_READ_ENDPOINT_LIST_ORGANISATION_DATASET;
 const API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_CREATE = API_READ_ENDPOINT_LIST_ORGANISATION_DATASET_RESOURCES;
@@ -105,6 +107,39 @@ module.exports = {
     var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_CHANGE, orgid, dsid);
 
     this._doPutJson(uri, json, done, config.AccessToken);
+
+  },
+  // Updates the specified dataset with the key/value metadata
+  changeDatasetKeyValue: function(orgid, dsid, key, value, done) {
+
+    console.log('Updating dataset ' + dsid);
+
+    if (config.AccessToken == null || config.AccessToken == '') {
+      console.log('A valid Authorisation Token is required to make this call. Set this in the config.js');
+      return;
+    }
+
+    // store for use in the callback
+    var self = this;
+
+    // get the existing metadata - pass in true at the end to get raw json rather than entities
+    this.getPublishedDataset(orgid, dsid, function(err, result){
+
+      // the metadata is a subset of the response
+      var metadata = result.MetadataResultSet.Metadata;
+
+      // change the key to the new value
+      myutil.setValues(metadata, key, value);
+
+      // send back to the server
+      //completeUpdate(metadata);
+
+      var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_CHANGE, orgid, dsid);
+
+      console.log('Sending ' + JSON.stringify(metadata));
+      self._doPutJson(uri, metadata, done, config.AccessToken);
+
+    }, true); //true to get back raw json rather than entities
 
   },
   // Gets the files for a given dataset
@@ -211,6 +246,35 @@ module.exports = {
     var uri = util.format(API_WRITE_ENDPOINT + API_WRITE_ENDPOINT_ORGANISATION_DATASET_RESOURCE_CHANGE_VERSION, orgid, dsid, resid, verid);
 
     this._doPutData(uri, json, file, done, config.AccessToken);
+  },
+  searchDatasetsByKeyAndValue: function(key, value, render, raw){
+
+    console.log('Searching datasets with ' + key + ' - ' + value);
+
+    var uri = util.format(API_READ_ENDPOINT + API_READ_ENDPOINT_SEARCH_KEYVALUE, key, value);
+
+    // make the get request
+    this._doGet(uri, function (err, json) {
+
+      // if raw is set then return the json directly
+      if (raw) {
+        render(err, json);
+      } else {
+
+        var result = [];
+
+        // create entities from the json returned
+        for (var k in json.Results) {
+          result.push(new Dataset(json.Results[k].Data.OrganisationId, json.Results[k].Key, json.Results[k].Data.Title));
+        }
+
+        // now render it
+        render(err, result);
+
+      }
+
+    });
+
   },
   getToken: function(requestComplete) {
 

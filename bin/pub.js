@@ -8,4 +8,5 @@ program
   .command('organisations', 'Organisations operations to this user')
   .command('datasets', 'Datsets operations to this organisation')
   .command('resources', 'Resource operations to this dataset')
+  .command('bulk', 'Provides an interface for bulk operations')
   .parse(process.argv);

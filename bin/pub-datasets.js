@@ -43,6 +43,7 @@ function run(token){
       list();
       break;
     case 'query':
+      query();
       break;
     default:
       console.error('You must enter a command: --cmd <create | read | update | delete | list | query>');
@@ -52,6 +53,16 @@ function run(token){
 // List all datasets from a specified organisation
 function list() {
   publisher.getPublishedDatasets(program.org, render);
+}
+
+// Searches datasets
+function query() {
+
+  // search by matching key and value
+  if (program.key != null && program.val != null) {
+    publisher.searchDatasetsByKeyAndValue(program.key, program.val, render);
+  }
+
 }
 
 // Reads the metadata of a specific dataset
@@ -94,14 +105,22 @@ function update() {
 
   // update a fragment
   if (program.json != null || program.xjson != null) {
+
+    var ojson = null;
+    if (program.json != null) {
+      ojson = JSON.parse(program.json);
+    } else if (program.xjson != null) {
+
+    }
+
     // get the json and continue
     if (program.json != null) {
-      completeUpdate(JSON.parse(program.json), program.upload);
+      publisher.changeDataset(program.org, program.ds, JSON.parse(program.json), renderTransaction);
     }
     if (program.xjson != null) {
       fs.readFile(program.xjson, 'utf8', function (err, data) {
         if (err) throw err;
-        completeUpdate(JSON.parse(data), program.upload);
+        publisher.changeDataset(program.org, program.ds, JSON.parse(data), renderTransaction);
       });
     }
   }
@@ -109,37 +128,20 @@ function update() {
   // update a specific key
   if (program.key != null && program.val != null) {
 
-    // get the existing metadata - pass in true at the end to get raw json rather than entities
-    publisher.getPublishedDataset(program.org, program.ds, function(err, result){
-
-      // the metadata is a subset of the response
-      var metadata = result.MetadataResultSet.Metadata;
-
-      // change the key to the new value
-      myutil.setValues(metadata, program.key, program.val);
-
-      // send back to the server
-      completeUpdate(metadata);
-
-    }, true);
+    publisher.changeDatasetKeyValue(program.org, program.ds, program.key, program.val, renderTransaction);
   }
 }
 
-
-function completeUpdate(json) {
-
-  publisher.changeDataset(program.org, program.ds, json, renderTransaction);
-
-}
 
 function render(err, results) {
   if (err == null && null != results) {
     if (Array.isArray(results)) {
       results.forEach(function (result) {
-        console.log('%s [%s] \nOrg=[%s] \nDataset=[%s]', result.title, result.id, result.dataset.organisation.id, result.dataset.id);
+        //console.log('%s [%s] \nOrg=[%s] \nDataset=[%s]', result.title, result.id, result.dataset.organisation.id, result.dataset.id);
+        console.log('%s [%s] \nOrg=[%s]', result.title, result.id, result.organisation.id);
       });
     } else {
-      console.log('%s [%s] \nOrg=[%s] \nDataset=[%s]', results.title, results.id, results.organisation.id, results.id);
+      console.log('%s [%s] \nOrg=[%s]', results.title, results.id, results.organisation.id);
     }
   } else {
     console.log(err);
